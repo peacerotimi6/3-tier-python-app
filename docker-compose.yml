@@ -1,0 +1,43 @@
+sservices:
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: database
+      DB_NAME: mydb
+      DB_USER: user
+      DB_PASS: your_password_here
+    depends_on:
+      - database
+
+
+  database:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+    secrets:
+      - db_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${DB_USER}@database:5432/${DB_NAME}?sslmode=disable"
+    ports:
+      - "9187:9187"
+    depends_on:
+      - database
+
+secrets:
+  db_pass:
+    file: ./db_pass.txt
+
+volumes:
+  db_data:
+
